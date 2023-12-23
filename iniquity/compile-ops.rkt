@@ -287,7 +287,8 @@
          (Je l)
          (Mov rax (value->bits #f))
          (Label l))))
-
+(define assert-values
+    (assert-type ptr-mask type-values))
 (define assert-integer
   (assert-type mask-int type-int))
 (define assert-char

@@ -22,6 +22,7 @@
            (Push r15)
            (Mov rbx rdi) ; recv heap pointer
            (compile-e e '())
+	   checking-vector
            (Pop r15)     ; restore callee-save register
            (Pop rbx)
            (Ret)
@@ -29,6 +30,158 @@
            (Label 'raise_error_align)
            pad-stack
            (Call 'raise_error))]))
+
+(define checking-vector
+    (seq (Global 'l1)
+    (Global 'l2)
+    (Push rax)
+    (And rax type-values)
+    (Cmp rax type-values)
+    (Pop rax)
+    (Je 'l1)
+    (Mov r8 1)
+    (Mov (Offset rbx 0) r8)   
+    (Mov (Offset rbx 8) rax)  
+    (Mov rax rbx)
+    (Jmp 'l2)
+    (Label 'l1)
+    (Xor rax type-values)
+    (Label 'l2)))
+
+(define (compile-values es c)
+      (let ((loop1  (gensym))
+            (done1  (gensym))
+            (empty1 (gensym))
+            (empty2 (gensym))
+	    (done   (gensym)))
+	    (seq (Mov r8 (length es))
+	         (Cmp r8 0)
+	         (Je empty1)
+	         (Cmp r8 1)
+	         (Je empty2)
+	         (Mov 'r12 r8)
+	         (compile-es (reverse es) c)
+         	 (Mov r8 'r12)
+                 (Mov r9 rbx)
+                 (Or r9 type-values)
+                 (Mov (Offset rbx 0) r8)
+                 (Add rbx 8)
+                 (Label loop1)
+                 (Pop rax)
+                 (Mov (Offset rbx 0) rax)
+                 (Add rbx 8)
+                 (Sub r8 1)
+                 (Cmp r8 0)
+                 (Jne loop1)							        					         (Mov rax r9)							
+		 (Jmp done1)													         (Label empty2)													         (compile-es es c)																					       	       
+		 (Pop rax)
+		 (Jmp done)
+			
+		 (Label empty1)
+		
+		 (Or rbx type-values)
+		
+		 (Mov (Offset rbx 8) r8)
+		 (Mov rax rbx)										
+		 (Label done1)																			
+		 (Mov 'r12 (length es))						
+		 (Label done)	
+		 )))
+
+(define (compile-letvals xs e el c)
+      (let ((zero  (gensym))
+	    (done  (gensym))
+	    (loop  (gensym))
+            (done2 (gensym))
+	    (done3 (gensym)))
+	    (seq 
+	    (compile-e e c)
+            (Push rax)
+            (And rax type-values)
+      	    (Cmp rax type-values)	
+	    (Pop rax)
+	
+	    (Jne done2)
+	
+	    (assert-values rax)
+	
+	    (Xor rax type-values)
+	
+	    (Cmp rax 0)
+	
+	    (Jl 'raise_error)
+	
+	    (Je zero)               ; rax = pointer
+	
+	    (Mov 'r9 (Offset rax 0)) ; r9 is length
+	
+	    (Cmp 'r9 (length xs))
+	
+	    (Jne 'raise_error)
+	
+	    (Push 'r9)
+	
+	    (Mov 'r8 'r9)             ; r8 = index
+	
+	    (Sar 'r8 int-shift)
+	
+	    (Pop 'r11)               ; r11 = length
+						
+	    (Mov 'r10 0)
+	
+	    (Add rax r8)
+	
+	    (Mov 'r8 0)
+	
+	    (Label loop)
+	
+	    (Cmp 'r11 'r10)
+	
+	    (Je done)
+	
+	    (Mov 'r8 (Offset rax 8))
+	
+	    (Add rax 8)
+	
+	    (Push 'r8)
+	
+	    (Add 'r10 1)
+	
+	    (Jmp loop)							
+	    (Label zero)
+		
+	    (Cmp rax (length xs))
+	
+	    (Jne 'raise_error)
+	
+	    (compile-e el (append (reverse xs) c))
+	
+	    (Jmp done3)
+	
+	    (Label done)
+	
+	    (compile-e el (append (reverse xs) c))
+	
+	    (Add rsp (* 8 (length xs)))
+	
+	    (Jmp done3)
+	
+	    (Label done2)
+	
+	    (Mov 'r8 (length xs))
+	
+	    (Cmp 'r8 1)
+	
+	    (Jne 'raise_error)
+	
+	    (Push rax)
+	
+	    (compile-e el (append (reverse xs) c))
+	
+	    (Add rsp (* 8 (length xs)))
+	
+	    (Label done3)									
+	    )))
 
 (define (externs)
   (seq (Extern 'peek_byte)
@@ -70,6 +223,8 @@
     [(If e1 e2 e3)      (compile-if e1 e2 e3 c)]
     [(Begin e1 e2)      (compile-begin e1 e2 c)]
     [(Let x e1 e2)      (compile-let x e1 e2 c)]
+     [(Values es)          (compile-values es c)]
+         [(Let-values xs e el) (compile-letvals xs e el c)]
     [(App f es)         (compile-app f es c)]))
 
 ;; Value -> Asm

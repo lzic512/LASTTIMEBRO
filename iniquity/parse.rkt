@@ -42,9 +42,22 @@
      (If (parse-e e1) (parse-e e2) (parse-e e3))]
     [(list 'let (list (list (? symbol? x) e1)) e2)
      (Let x (parse-e e1) (parse-e e2))]
+    [(cons 'values es)
+           (Values (parse-vs es))]
+           [(list 'let-values (list (list xs e)) el)
+	           (if (and (list? xs)
+			           (andmap symbol? xs))
+		            (Let-values xs (parse-e e) (parse-e el))
+			           (error "parse let-values error"))]
     [(cons (? symbol? f) es)
      (App f (map parse-e es))]
     [_ (error "Parse error" s)]))
+
+(define (parse-vs es)
+    (match es
+	      ['() '()]
+	         [(cons e el) (cons (parse-e e) (parse-vs el))]))
+
 
 (define op0
   '(read-byte peek-byte void))

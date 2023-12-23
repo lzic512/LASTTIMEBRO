@@ -5,6 +5,7 @@
 (define imm-mask       #b111)
 (define ptr-mask       #b111)
 (define type-box       #b001)
+(define type-values    #b110)
 (define type-cons      #b010)
 (define type-vect      #b011)
 (define type-str       #b100)
@@ -65,3 +66,5 @@
 
 (define (str-bits? v)
   (zero? (bitwise-xor (bitwise-and v imm-mask) type-str)))
+(define (values-bits? v)
+    (zero? (bitwise-xor (bitwise-and v imm-mask) type-values)))

@@ -3,12 +3,16 @@
 (require "types.rkt"
          ffi/unsafe)
 
-;; Answer* -> Answer
+; Answer* -> Answer
 (define (unload/free a)
-  (match a
-    ['err 'err]
-    [(cons h v) (begin0 (unload-value v)
-                        (free h))]))
+    (match a
+	       ['err 'err]
+	           [(cons h vs) (begin0 (unload-values vs)
+					                         (free h))]))
+
+(define (unload-values vs)
+    (let ([vec (unload-value (bitwise-xor vs type-vect))])
+          (apply values (vector->list vec))))
 
 ;; Value* -> Value
 (define (unload-value v)

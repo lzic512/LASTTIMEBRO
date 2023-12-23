@@ -73,6 +73,9 @@
      (match (interp-env e1 r ds)
        ['err 'err]
        [v (interp-env e2 (ext r x v) ds)])]
+    [(Values es) (apply values (interp-val es r ds))]
+    [(Let-values xs e el)
+     (let ((vs (call-with-values (lambda () (interp-env e r ds)) list))) (if (= (length xs) (length vs)) (interp-env el (append (zip xs vs) r) ds) 'err))]
     [(App f es)
      (match (interp-env* es r ds)
        ['err 'err]
@@ -83,6 +86,16 @@
            (if (= (length xs) (length vs))
                (interp-env e (zip xs vs) ds)
                'err)])])]))
+
+(define (interp-val es r ds)
+    (match es
+     ['() '()]
+     [(cons e el) (cons (interp-env e r ds) (interp-val el r ds))]))
+
+(define (let-val xs)
+    (match xs
+    ['() '()]
+    [(cons x xs) (cons x)]))
 
 ;; (Listof Expr) REnv Defns -> (Listof Value) | 'err
 (define (interp-env* es r ds)

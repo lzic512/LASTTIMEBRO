@@ -48,6 +48,8 @@
 (struct Prim3 (p e1 e2 e3) #:prefab)
 (struct If    (e1 e2 e3)   #:prefab)
 (struct Begin (e1 e2)      #:prefab)
+(struct Values (es)        #:prefab)
+(struct Let-values (xs e el)#:prefab)
 (struct Let   (x e1 e2)    #:prefab)
 (struct Var   (x)          #:prefab)
 (struct App   (f es)       #:prefab)
