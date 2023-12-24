@@ -2,7 +2,33 @@
 (provide test-runner test-runner-io)
 (require rackunit)
 
+
+
 (define (test-runner run)
+
+(define (check-equal?* prog expected-list)
+    (check-equal? (call-with-values
+		                     (λ () (apply run prog))
+				                      (λ xs xs))
+		                  expected-list))
+
+  (define (f x)
+        (values x (+ x 1) (+ x 2)))
+
+  (check-equal? (let ([x (values 5)])
+        (add1 x)) 6)
+
+ (check-equal? (add1 (values 5)) 6)
+
+ (check-equal? (let-values ([() (values)]) 7) 7)
+
+  (check-equal? (let-values ([(x) (values 1)]) (add1 x)) 2)
+
+  (check-equal?
+   (let-values ([(x y z) (f 5)])
+          (cons x (cons y (cons z '())))) '(5 6 7))
+  (check-equal?* '[(values (values 1) 2 3)] '(1 2 3))
+
   ;; Abscond examples
   (check-equal? (run 7) 7)
   (check-equal? (run -8) -8)

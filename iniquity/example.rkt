@@ -1,2 +1,2 @@
 #lang racket
-(values 1 2 3)
+(values (values 1) 2 3)
